@@ -1,11 +1,24 @@
 import os
+import argparse
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 import multiprocessing
 from time import time
 from utils import *
 
-def main():
+def arg_parser():
+    parser = argparse.ArgumentParser(description="Clustering of Green Energy Dataset")
+    parser.add_argument("--data_path", type=str, default="Green_Energy_Dataset", help="Path to the Green Energy Dataset")
+    parser.add_argument("--output_path", type=str, default="output", help="Path to save the clustering results")
+    parser.add_argument("--embedding_type", type=str, default="word2vec", help="Type of embedding to use (word2vec or tfidf)")
+    parser.add_argument("--embedding_dim", type=int, default=150, help="Dimension of the word embeddings")
+    parser.add_argument("--window", type=int, default=30, help="Window size for Word2Vec")
+    parser.add_argument("--min_count", type=int, default=1, help="Minimum count for Word2Vec")
+    return parser.parse_args()
+
+def main(args):
+    os.makedirs(args.output_path, exist_ok=True)
+
     files = os.listdir("Green_Energy_Dataset")
     files_chunk = list(chunks(files, len(files) // 30))  # Split files into 30 chunks
 
@@ -30,26 +43,9 @@ def main():
 
     # Silhouette Analysis
     print("Performing Silhouette Analysis...")
-    range_n_clusters = range(2, 10)
-    silhouette_avg_scores = []
-
-    for n_clusters in range_n_clusters:
-        # Initialize KMeans with the current number of clusters
-        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-        cluster_labels = kmeans.fit_predict(word2vec_vectors)
-        # Compute the silhouette score for the current number of clusters
-        silhouette_avg = silhouette_score(word2vec_vectors, cluster_labels)
-        silhouette_avg_scores.append(silhouette_avg)
-        print(f"For n_clusters = {n_clusters}, the silhouette score is {silhouette_avg}")
-    # Plot the silhouette scores
-    plt.plot(range_n_clusters, silhouette_avg_scores, marker='o')
-    plt.xlabel('Number of clusters')
-    plt.ylabel('Average Silhouette Score')
-    plt.title('Silhouette Analysis For Optimal Number of Clusters')
-    plt.savefig('silhouette_analysis.png')
-
-    optimal_clusters = range_n_clusters[silhouette_avg_scores.index(max(silhouette_avg_scores))]
+    optimal_clusters = silhouette_analysis(word2vec_vectors, args.output_path)
     print("The optimal number of clusters =", optimal_clusters)
+
     # Cluster the texts
     print("Running KMeans Clustering...\n")
     kmeans, labels = cluster_texts_kmeans(word2vec_vectors, optimal_clusters)
@@ -63,11 +59,11 @@ def main():
     # Visualize clusters
     print("Visualizing clusters...")
     titles = [os.path.basename(path) for path in file_paths]
-    visualize_clusters_pca(word2vec_vectors, labels, titles)
+    visualize_clusters_pca(word2vec_vectors, labels, titles, args.output_path)
 
     # Save clustering results
     print("Saving clustering results...")
-    save_clustering_results(labels, file_paths)
+    save_clustering_results(labels, file_paths, args.output_path)
 
     # Generate summary report
     print("Generating summary report...\n")
@@ -75,4 +71,5 @@ def main():
 
     print("Process completed.")
 if __name__ == "__main__":
-    main()
+    args = arg_parser()
+    main(args)

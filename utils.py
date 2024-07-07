@@ -10,7 +10,7 @@ from tqdm import tqdm
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
-# from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from gensim.models import Word2Vec
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, davies_bouldin_score
@@ -23,7 +23,7 @@ from time import time
 
 nlp = spacy.load("en_core_web_sm") # python -m spacy download en
 
-def visualize_clusters_pca(vectors, labels, titles):
+def visualize_clusters_pca(vectors, labels, titles, output_path):
     pca = PCA(n_components=2)
     reduced_vectors = pca.fit_transform(vectors)
 
@@ -59,7 +59,7 @@ def visualize_clusters_pca(vectors, labels, titles):
                  )
 
     fig = dict(data=data, layout=layout)
-    pyo.plot(fig, filename='clustering_visualization_pca.html')
+    pyo.plot(fig, filename=os.path.join(output_path, 'cluster_visualization.html'))
 
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
@@ -132,9 +132,39 @@ def extract_abstract_from_pdf_text(pdf_text):
             abstract_text = "No abstract found."
     return abstract_text
 
-def save_clustering_results(labels, file_paths):
+def silhouette_analysis(vectors, output_path, range_n_clusters=range(2, 10)):
+    silhouette_avg_scores = []
+
+    for n_clusters in range_n_clusters:
+        # Initialize KMeans with the current number of clusters
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+        cluster_labels = kmeans.fit_predict(vectors)
+        # Compute the silhouette score for the current number of clusters
+        silhouette_avg = silhouette_score(vectors, cluster_labels)
+        silhouette_avg_scores.append(silhouette_avg)
+        print(f"For n_clusters = {n_clusters}, the silhouette score is {silhouette_avg}")
+
+    # Plot the silhouette scores
+    plt.figure()
+    plt.plot(range_n_clusters, silhouette_avg_scores, marker='o')
+    plt.xlabel('Number of clusters')
+    plt.ylabel('Average Silhouette Score')
+    plt.title('Silhouette Analysis For Optimal Number of Clusters')
+    plt.savefig(os.path.join(output_path, "silhouette_analysis.png"))
+    plt.close()
+
+    # Return the optimal number of clusters
+    optimal_clusters = range_n_clusters[silhouette_avg_scores.index(max(silhouette_avg_scores))]
+    return optimal_clusters
+
+def vectorize_texts_tfidf(texts):
+    vectorizer = TfidfVectorizer()
+    vectors = vectorizer.fit_transform(texts)
+    return vectors, vectorizer
+
+def save_clustering_results(labels, file_paths, output_path):
     results = pd.DataFrame({'File': file_paths, 'Cluster': labels})
-    results.to_csv('clustering_results.csv', index=False)
+    results.to_csv(os.path.join(output_path, 'clustering_results.csv'), index=False)
 
 def generate_summary_report(labels):
     cluster_counts = pd.Series(labels).value_counts()
