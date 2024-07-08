@@ -1,19 +1,23 @@
 import os
+import re
 import multiprocessing
 from time import time
 from typing import List, Tuple
 import pandas as pd
 import numpy as np
 from time import time
-from preprocessing import PDFExtractor, TextPreprocessor
-from embedding import TextVectorizer
-from clustering import KMeansCluster
-from evaluation import Evaluator
-from visualization import ClusterVisualizer
+from tqdm import tqdm
+from src.preprocessing import PDFProcessor, TextPreprocessor
+from src.embedding import TextVectorizer
+from src.clustering import ClusterAnalyzer
+from src.evaluation import Evaluator
+from src.visualization import ClusterVisualizer
 from utils import chunks, generate_summary_report
 
 class GreenEnergyClustering:
-    def __init__(self, input_path: str, output_path: str, embedding_type: str, embedding_dim: int, window_size: int, parallel: bool, num_workers: int, visualize_method: str) -> None:
+    def __init__(self, input_path: str, output_path: str, embedding_type: str,
+                 embedding_dim: int, window_size: int, parallel: bool, num_workers: int, 
+                 visualize_method: str, init_method: str, max_clusters: range, seed: int, verbose: bool) -> None:
         """
         Initializes the GreenEnergyClustering instance.
 
@@ -25,6 +29,11 @@ class GreenEnergyClustering:
         - window_size: int - Window size parameter for certain embedding methods (e.g., word2vec). Not currently used.
         - parallel: bool - Flag indicating whether to enable parallel processing for abstract extraction and vectorization.
         - num_workers: int - Number of worker processes to use for parallel processing. Applies when parallel=True.
+        - visualize_method: str - Dimensionality reduction method for visualizing the clusters (e.g., 'pca', 'tsne').
+        - init_method: str - Method to initialize centroids for KMeans clustering.
+        - max_clusters: int - Maximum number of clusters to evaluate.
+        - seed: int - Random seed for reproducibility.
+        - verbose: bool - Flag indicating whether to print verbose output during the process is running.
         """
 
         self.input_path = input_path
@@ -35,14 +44,18 @@ class GreenEnergyClustering:
         self.parallel = parallel
         self.num_workers = num_workers
         self.visualize_method = visualize_method
-        self.pdf_extractor = PDFExtractor()
+        self.init_method = init_method
+        self.seed = seed
+        self.verbose = verbose
+        self.n_clusters_range = range(2, max_clusters+1)
+        self.pdf_extractor = PDFProcessor()
         self.text_preprocessor = TextPreprocessor()
-        self.text_vectorizer = TextVectorizer()
-        self.kmeans_cluster = KMeansCluster()
+        self.text_vectorizer = TextVectorizer(embedding_type, embedding_dim, window_size)
+        self.kmeans_cluster = ClusterAnalyzer(output_path, init_method, seed, verbose)
         self.evaluator = Evaluator()
-        self.cluster_visualizer = ClusterVisualizer()
+        self.cluster_visualizer = ClusterVisualizer(output_path, visualize_method)
 
-    def extract_abstracts_serial(self, files: List[str]) -> Tuple[List[str], List[str]]:
+    def extract_abstracts_serial(self, files: List[str],  train_data: List[str], file_paths: List[str]) -> Tuple[List[str], List[str]]:
         """
         Extract abstracts from PDF files and preprocess them in serial.
 
@@ -52,10 +65,7 @@ class GreenEnergyClustering:
         Returns:
         - Tuple of updated train_data and file_paths lists.
         """
-
-        train_data = []
-        file_paths = []
-        for file in files:
+        for file in tqdm(files):
             file_path = os.path.join(self.input_path, file)
             pdf_text = self.pdf_extractor.read_pdf(file_path)
             abstract_text = self.pdf_extractor.extract_abstract_from_pdf_text(pdf_text)
@@ -85,11 +95,9 @@ class GreenEnergyClustering:
         train_data = manager.list()
         file_paths = manager.list()
 
-        start_time = time()
         with multiprocessing.Pool(processes=self.num_workers) as pool:
             pool.starmap(self.extract_abstracts_serial, [(chunk, train_data, file_paths) for chunk in files_chunk])
 
-        print(f"Time taken for extraction: {time() - start_time:.2f} seconds")
         return list(train_data), list(file_paths)
 
     def extract_abstracts(self) -> Tuple[List[str], List[str]]:
@@ -103,15 +111,20 @@ class GreenEnergyClustering:
         files = os.listdir(self.input_path)
 
         # Split files into chunks corresponding to num_workers
-        files_chunk = chunks(files, self.num_workers)
+        files_chunk = list(chunks(files, len(files) // self.num_workers))
+        if self.verbose:
+            print("Number of file chunks: ", len(files_chunk)) 
 
         print("Extracting abstracts from PDF files...")
+        start_time = time()
         if self.parallel:
             train_data, file_paths = self.extract_abstracts_parallel(files_chunk)
         else:
-            train_data, file_paths = self.extract_abstracts_serial(files)
-
-        print(f"Number of abstracts extracted: {len(train_data)}")
+            train_data, file_paths = [], []
+            train_data, file_paths = self.extract_abstracts_serial(files, train_data, file_paths)
+        if self.verbose:
+            print(f"Time taken for extraction: {time() - start_time:.2f} seconds")
+            print(f"Number of abstracts extracted: {len(train_data)}")
         print()
 
         return train_data, file_paths
@@ -127,13 +140,10 @@ class GreenEnergyClustering:
         - Tuple of vectorizer and embedding vectors.
         """
 
-        if self.embedding_type == "tfidf":
-            vectors, vectorizer = self.text_vectorizer.vectorize_texts_tfidf(train_data)
-        else:
-            vectors, vectorizer = self.text_vectorizer.vectorize_texts_word2vec(train_data, self.window_size, self.embedding_dim)
-        return vectors
+        vectors, vectorizer = self.text_vectorizer.vectorize_texts(train_data)
+        return vectors, vectorizer
 
-    def run_clustering(self, vectors: np.ndarray, file_paths: List[str]):
+    def run_clustering(self, vectors: np.ndarray, file_paths: List[str], n_clusters_range: range):
         """
         Executes the clustering process.
 
@@ -142,14 +152,19 @@ class GreenEnergyClustering:
         - file_paths (List[str]): List of file paths corresponding to each vector.
 
         """
-
-        optimal_clusters = self.kmeans_cluster.silhouette_analysis(vectors, self.output_path)
+        print("Running Silhouette Analysis to find optimal number of clusters...")
+        optimal_clusters = self.kmeans_cluster.silhouette_analysis(vectors, n_clusters_range)
+        print("Running KMeans clustering using optimal number of clusters...")
         kmeans, labels = self.kmeans_cluster.cluster_texts_kmeans(vectors, optimal_clusters)
+        print("Evaluating clustering results")
         silhouette_avg, davies_bouldin_avg = self.evaluator.evaluate_clustering(vectors, labels)
-        print(f"Silhouette Score: {silhouette_avg}, Davies-Bouldin Score: {davies_bouldin_avg}")
+        print(f"\_The optimal number of clusters is: {optimal_clusters}")
+        print(f"\_Silhouette Score: {silhouette_avg}, Davies-Bouldin Score: {davies_bouldin_avg}")
         self.save_clustering_results(labels, file_paths)
-        self.cluster_visualizer.visualize_clusters(vectors, labels, file_paths, self.output_path, self.visualize_method)
-        generate_summary_report(labels)
+        self.cluster_visualizer.visualize_clusters(vectors, labels, file_paths)
+        if self.verbose:
+            generate_summary_report(labels)
+        print("Clustering process completed successfully!")
 
     def save_clustering_results(self, labels: np.ndarray, file_paths: List[str]) -> None:
         """
@@ -177,6 +192,6 @@ class GreenEnergyClustering:
 
         os.makedirs(self.output_path, exist_ok=True)
         train_data, file_paths = self.extract_abstracts()
-        vectors = self.vectorize_texts(train_data)
-        self.run_clustering(vectors, file_paths)
+        vectors, vectorizer = self.vectorize_texts(train_data)
+        self.run_clustering(vectors, file_paths, self.n_clusters_range)
 

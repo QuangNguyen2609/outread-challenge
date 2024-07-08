@@ -1,4 +1,5 @@
 from typing import List, Tuple
+import os
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -7,7 +8,7 @@ from sklearn.metrics import silhouette_score, davies_bouldin_score
 import matplotlib.pyplot as plt
 
 class ClusterAnalyzer:
-    def __init__(self, vectors: np.ndarray, labels: np.ndarray, output_path: str, init_method: str) -> None:
+    def __init__(self, output_path: str, init_method: str, seed: int, verbose: bool) -> None:
         """
         Initialization for ClusterAnalyzer
 
@@ -19,19 +20,19 @@ class ClusterAnalyzer:
 
         """
 
-        self.vectors = vectors
-        self.labels = labels
         self.output_path = output_path
         self.init_method = init_method
+        self.seed = seed
+        self.verbose = verbose
 
-    def silhouette_analysis(self, range_n_clusters: range = range(2, 10)) -> int:
+    def silhouette_analysis(self, vectors: np.ndarray, range_n_clusters: range) -> int:
         """
         Perform silhouette analysis to find optimal number of clusters.
 
         Parameters:
         - vectors: Array of input vectors for clustering.
         - output_path: Path to save the silhouette plot.
-        - range_n_clusters: Range of number of clusters to evaluate (default: range(2, 10)).
+        - range_n_clusters: Range of number of clusters to evaluate (default: range(2, 10+1)).
 
         Returns:
         - Optimal number of clusters based on silhouette score.
@@ -39,11 +40,12 @@ class ClusterAnalyzer:
 
         silhouette_avg_scores = []
         for n_clusters in range_n_clusters:
-            kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-            cluster_labels = kmeans.fit_predict(self.vectors)
-            silhouette_avg = silhouette_score(self.vectors, cluster_labels)
+            kmeans = KMeans(n_clusters=n_clusters, init=self.init_method, random_state=self.seed)
+            cluster_labels = kmeans.fit_predict(vectors)
+            silhouette_avg = silhouette_score(vectors, cluster_labels)
             silhouette_avg_scores.append(silhouette_avg)
-            print(f"For n_clusters = {n_clusters}, the silhouette score is {silhouette_avg}")
+            if self.verbose:
+                print(f"For n_clusters = {n_clusters}, the silhouette score is {silhouette_avg}")
 
         plt.figure()
         plt.plot(range_n_clusters, silhouette_avg_scores, marker='o')
@@ -56,7 +58,7 @@ class ClusterAnalyzer:
         optimal_clusters = range_n_clusters[silhouette_avg_scores.index(max(silhouette_avg_scores))]
         return optimal_clusters
 
-    def cluster_texts_kmeans(self, n_clusters: int, random_state: int = 42) -> Tuple[KMeans, np.ndarray]:
+    def cluster_texts_kmeans(self, vectors: np.ndarray, n_clusters: int, seed: int = 42) -> Tuple[KMeans, np.ndarray]:
         """
         Cluster texts using KMeans algorithm.
 
@@ -68,7 +70,7 @@ class ClusterAnalyzer:
         - Tuple of trained KMeans model and array of cluster labels.
         """
 
-        kmeans = KMeans(n_clusters=n_clusters, init=self.init_method, random_state=random_state)
+        kmeans = KMeans(n_clusters=n_clusters, init=self.init_method, random_state=seed)
         kmeans.fit(vectors)
         labels = kmeans.labels_
         return kmeans, labels

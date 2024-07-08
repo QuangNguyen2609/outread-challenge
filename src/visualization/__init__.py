@@ -1,1 +1,1 @@
-from .visualizer import Visualizer
+from .cluster_visualizer import ClusterVisualizer

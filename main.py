@@ -9,76 +9,13 @@ def arg_parser():
     parser.add_argument("--embedding_dim", type=int, default=150, help="Dimension of the word embeddings")
     parser.add_argument("--window_size", type=int, default=30, help="Window size for Word2Vec")
     parser.add_argument("--parallel", action='store_true',  help="Enable parallel processing (default: False)")
-    parse.add_argument("--num_worker", type=int, default=1, help="Number of processes for")
-    parse.add_argument("--visualize_method", type=str, default='pca', help='Dimensionality reduction method for clustering visualzation')
+    parser.add_argument("--num_worker", type=int, default=1, help="Number of processes for")
+    parser.add_argument("--visualize_method", type=str, default='pca', help='Dimensionality reduction method for clustering visualzation')
+    parser.add_argument("--init_method", type=str, default='k-means++', help='Method to initialize centroids for KMeans clustering')
+    parser.add_argument("--max_clusters", type=int, default=10, help='Maximum number of clusters to evaluate')
+    parser.add_argument("--seed", type=int, default=42, help='Random seed for reproducibility')
+    parser.add_argument("--verbose", action='store_true', help='Print verbose output during the process')
     return parser.parse_args()
-
-# def main(args):
-#     os.makedirs(args.output_path, exist_ok=True)
-
-#     files = os.listdir(args.input_path)
-    
-#     # Split files into chunks that corresponding to num_worker
-#     files_chunk = list(chunks(files, len(files) // args.num_worker)) 
-
-#     print("Extracting abstracts from PDF files...")
-#     start_time = time()
-#     if args.parallel:
-#         manager = multiprocessing.Manager()
-#         train_data = manager.list()
-#         file_paths = manager.list()
-#         with multiprocessing.Pool(processes=30) as pool:
-#             pool.starmap(extract_abstract, [(chunk, train_data, file_paths) for chunk in files_chunk])
-#     else:
-#         train_data = []
-#         file_paths = []
-#         train_data, file_paths = extract_abstract(files, train_data, file_paths)
-
-#     print(f"Time taken for extraction: {time() - start_time:.2f} seconds")
-#     train_data = list(train_data)
-#     file_paths = list(file_paths)
-        
-#     print("Number of abstracts extracted:", len(train_data), "\n")
-
-#     # Word2Vec Vectorization
-#     if args.embedding_type == "word2vec"
-#         print("Vectorizing texts using Word2Vec...")
-#         embedding_vectors, embedding_model = vectorize_texts_word2vec(train_data, args.window_size, args.embedding_dim)
-#         print("Word2Vec Vectors:", embedding_vectors.shape, "\n")
-#     else:
-#         print("Vectorizing texts using TF-IDF...")
-#         embedding_vectors, embedding_model = vectorize_texts_tfidf(train_data)
-#         print("TF-IDF Vectors:", embedding_vectors.shape, "\n")
-
-#     # Silhouette Analysis
-#     print("Performing Silhouette Analysis...")
-#     optimal_clusters = silhouette_analysis(embedding_vectors, args.output_path)
-#     print("The optimal number of clusters =", optimal_clusters)
-
-#     # Cluster the texts
-#     print("Running KMeans Clustering...\n")
-#     kmeans, labels = cluster_texts_kmeans(embedding_vectors, optimal_clusters)
-    
-#     print("Evaluating clustering performance...")
-#     # Evaluate clustering
-#     silhouette_avg, davies_bouldin_avg = evaluate_clustering(embedding_vectors, labels)
-#     print(f'Silhouette Score: {silhouette_avg}')
-#     print(f'Davies-Bouldin Index: {davies_bouldin_avg}\n')
-
-#     # Visualize clusters
-#     print("Visualizing clusters...")
-#     titles = [os.path.basename(path) for path in file_paths]
-#     visualize_clusters(embedding_vectors, labels, titles, args.output_path, args.visualize_method)
-
-#     # Save clustering results
-#     print("Saving clustering results...")
-#     save_clustering_results(labels, file_paths, args.output_path)
-
-#     # Generate summary report
-#     print("Generating summary report...\n")
-#     generate_summary_report(labels)
-
-#     print("Process completed.")
 
 def main(args):
     clustering = GreenEnergyClustering(
@@ -88,7 +25,12 @@ def main(args):
         embedding_dim=args.embedding_dim,
         window_size=args.window_size,
         parallel=args.parallel,
-        num_workers=args.num_workers
+        num_workers=args.num_worker,
+        visualize_method=args.visualize_method,
+        init_method=args.init_method,
+        max_clusters=args.max_clusters,
+        seed=args.seed,
+        verbose=args.verbose
     )
     clustering.run()
 

@@ -5,18 +5,15 @@ from PyPDF2 import PdfReader
 nlp = spacy.load("en_core_web_sm")
 
 class PDFProcessor:
-    def __init__(self, input_path: str) -> None:
+    def __init__(self) -> None:
         """
         Initialization for PDFProcessor
 
-        Parameters:
-        - input_path (str): path to input dataset
-
         """
-        
-        self.input_path = input_path
 
-    def read_pdf(self) -> str:
+        pass
+
+    def read_pdf(self, input_path: str) -> str:
         """
         Read text content from a PDF file.
 
@@ -24,7 +21,7 @@ class PDFProcessor:
         - String containing text extracted from the PDF.
         """
 
-        reader = PdfReader(self.input_path)
+        reader = PdfReader(input_path)
         num_pages = len(reader.pages)
         text = ""
         for i, page in enumerate(reader.pages):
