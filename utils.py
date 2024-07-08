@@ -4,9 +4,6 @@ import re
 import os
 import numpy as np
 import pandas as pd
-# nltk.download('stopwords')
-# nltk.download('punkt')
-# nltk.download('wordnet')
 from tqdm import tqdm
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -22,11 +19,11 @@ import plotly.offline as pyo
 import spacy
 from time import time
 
-nlp = spacy.load("en_core_web_sm") # python -m spacy download en
+nlp = spacy.load("en_core_web_sm")
 
-def visualize_clusters_pca(vectors: np.ndarray, labels: np.ndarray, titles: List[str], output_path: str) -> None:
+def visualize_clusters(vectors: np.ndarray, labels: np.ndarray, titles: List[str], output_path: str, visualize_method: str) -> None:
     """
-    Visualizes clusters using PCA.
+    Visualizes clusters using PCA or T-SNE.
 
     Parameters:
     - vectors: The 2D array of vectors to visualize, after PCA transformation.
@@ -34,9 +31,12 @@ def visualize_clusters_pca(vectors: np.ndarray, labels: np.ndarray, titles: List
     - titles: List of titles corresponding to each vector (for hover text in the plot).
     - output_path: Path to save the HTML plot file.
     """
-
-    pca = PCA(n_components=2)
-    reduced_vectors = pca.fit_transform(vectors)
+    if visualize_method == "pca"
+        dim_reduction_model = PCA(n_components=2)
+        reduced_vectors = pca.fit_transform(vectors)
+    else:
+        tsne = TSNE(n_components=2, random_state=42)
+        reduced_vectors = tsne.fit_transform(vectors)
 
     df = pd.DataFrame({
         'PC1_2d': reduced_vectors[:, 0],
@@ -298,7 +298,7 @@ def evaluate_clustering(vectors: np.ndarray, labels: np.ndarray) -> Tuple[float,
     davies_bouldin_avg = davies_bouldin_score(vectors, labels)
     return silhouette_avg, davies_bouldin_avg
 
-def vectorize_texts_word2vec(texts: List[str]) -> Tuple[np.ndarray, Word2Vec]:
+def vectorize_texts_word2vec(texts: List[str], window_size: int, embedding_dim: int) -> Tuple[np.ndarray, Word2Vec]:
     """
     Vectorize texts using Word2Vec model.
 
@@ -310,7 +310,7 @@ def vectorize_texts_word2vec(texts: List[str]) -> Tuple[np.ndarray, Word2Vec]:
     """
 
     tokenized_texts = [text.split() for text in texts]
-    model = Word2Vec(tokenized_texts, vector_size=150, window=30, min_count=1, workers=8)
+    model = Word2Vec(tokenized_texts, vector_size=embedding_dim, window=window_size, min_count=1, workers=8)
     vectors = []
     for tokens in tokenized_texts:
         vector = np.mean([model.wv[token] for token in tokens if token in model.wv], axis=0)
