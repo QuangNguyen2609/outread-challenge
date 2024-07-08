@@ -4,7 +4,7 @@
 This project aims to cluster a set of research papers based on the similarity of their abstracts using natural language processing (NLP) techniques and unsupervised machine learning algorithms. The clustering is performed to group together research papers that share common themes or topics, facilitating easier exploration and understanding of large collections of academic literature.
 
 ## Requirements
-- Python 3.x (recommended version: 3.7+)
+- Python 3.x (recommended version: 3.10+)
 - Libraries: PyPDF2, nltk, gensim, scikit-learn, spacy, pandas, numpy, matplotlib, plotly
 
 ## Installation
@@ -12,8 +12,10 @@ This project aims to cluster a set of research papers based on the similarity of
    ```bash
    git clone https://github.com/QuangNguyen2609/outread-challenge.git
    cd outread-challenge
-2. Install the required Python libraries:
+2. Create conda env & Install the required Python libraries:
     ```bash
+    conda create -n outread python=3.10
+    conda activate outread
     pip install -r requirements.txt
 3. Download NLTK and spacy resources:
 
@@ -22,7 +24,7 @@ This project aims to cluster a set of research papers based on the similarity of
     python -m spacy download en
 ## Project Structure
 The project is structured to maintain clarity and organization:
- + main.py: main script to run the pipeline
+ + main.py: Main script to run the pipeline
  + src: Contains all source code files.
     + utils.py: Utility functions used across modules.
     + pipeline.py: Orchestrates the Green Energy Clustering pipeline.
@@ -36,6 +38,7 @@ The project is structured to maintain clarity and organization:
 
     ```
     ├── README.md
+    ├── utils.py
     ├── main.py
     ├── src
     │   ├── utils.py
@@ -50,13 +53,12 @@ The project is structured to maintain clarity and organization:
     │   │   ├── pdf_extractor.py
     │   │   └── text_preprocessor.py
     │   └── visualization
-    │       ├── __init__.py
     │       └── cluster_visualizer.py
 ## Usage
 ### Running the Clustering Script
 To run the research paper clustering script, execute the following command from the project root directory:
 ```
-python main.py --input_path dataset/ --output_path results/ --embedding_type word2vec --embedding_dim 150 --window_size 30 --parallel --num_worker 30 --visualize_method pca
+python main.py --input_path Green_Energy_Dataset/ --output_path results/ --embedding_type word2vec --embedding_dim 150 --window_size 30 --parallel --num_worker 20 --visualize_method pca --init_method k-means++ --max_clusters 9 --seed 50 --verbose
 ```
 Parameters:
 
@@ -67,8 +69,12 @@ Parameters:
 + **--window_size**: Window size for the Word2Vec model.
 + -**-parallel**: Enable parallel processing for faster execution.
 + **--num_worker**: Number of processes to use for parallel processing the pdf files
-+ **--visualize_method**: Dimensionality reduction method to visualize clustering result
-### Output
++ **--visualize_method**: Dimensionality reduction method to visualize clustering result. Options can include "pca", "tsne", etc.
++ **--init_method**: Initialization method for KMeans clustering. Options can include "k-means++", "random", etc.
++ **--max_clusters**: Maximum number of clusters to evaluate for optimal clustering.
++ **--seed**: Random seed for reproducibility.
++ **--verbose**: Enable verbose output for more detailed logging.
+## Output
 
 After running the script, the following outputs will be generated in the specified output directory (results/ in this example):
 
@@ -90,17 +96,12 @@ After running the script, the following outputs will be generated in the specifi
 
 + **Word2Vec Embeddings**: Utilizes Word2Vec embeddings from the gensim library to represent text data as dense vectors. This captures semantic relationships between words and allows for measuring similarity between research paper abstracts based on their content.
 
-## Clustering
+### Clustering
 **K-means Clustering**: Implements K-means clustering to group research papers into clusters based on Embedding vectors. Determines the optimal number of clusters using silhouette analysis. There are two options for initialization are `random` and `k-means++`.
 
-## Evaluation
+### Evaluation
 Evaluates clustering performance using `silhouette score` and `Davies-Bouldin Index` to measure how similar each paper is to its own cluster compared to other clusters.
 
-## Visualization
+### Visualization
 PCA Visualization: Visualizes clustering results in a 2D space using Principal Component Analysis (PCA). Displays research paper titles in a scatter plot to provide context for each cluster.
 
-## Files Included
-+ `main.py`: Main Python script for clustering research papers.
-+ `utils.py`: Utility functions for running main algorithm
-+ `requirements.txt` : List of Python dependencies required to run the project.
-+ `README.md`: This file, providing an overview, usage instructions, and explanation of the project.
