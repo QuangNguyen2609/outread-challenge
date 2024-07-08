@@ -130,7 +130,7 @@ class GreenEnergyClustering:
         if self.embedding_type == "tfidf":
             vectors, vectorizer = self.text_vectorizer.vectorize_texts_tfidf(train_data)
         else:
-            vectors, model = self.text_vectorizer.vectorize_texts_word2vec(train_data, self.window_size, self.embedding_dim)
+            vectors, vectorizer = self.text_vectorizer.vectorize_texts_word2vec(train_data, self.window_size, self.embedding_dim)
         return vectors
 
     def run_clustering(self, vectors: np.ndarray, file_paths: List[str]):
@@ -145,7 +145,6 @@ class GreenEnergyClustering:
 
         optimal_clusters = self.kmeans_cluster.silhouette_analysis(vectors, self.output_path)
         kmeans, labels = self.kmeans_cluster.cluster_texts_kmeans(vectors, optimal_clusters)
-        self.kmeans_cluster.generate_summary_report(labels)
         silhouette_avg, davies_bouldin_avg = self.evaluator.evaluate_clustering(vectors, labels)
         print(f"Silhouette Score: {silhouette_avg}, Davies-Bouldin Score: {davies_bouldin_avg}")
         self.save_clustering_results(labels, file_paths)
@@ -175,7 +174,7 @@ class GreenEnergyClustering:
         3. Performs clustering on the vectorized data.
 
         """
-        
+
         os.makedirs(self.output_path, exist_ok=True)
         train_data, file_paths = self.extract_abstracts()
         vectors = self.vectorize_texts(train_data)

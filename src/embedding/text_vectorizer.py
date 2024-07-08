@@ -37,7 +37,7 @@ class TextVectorizer:
         - window_size (int): Window size for Word2Vec model (applicable only if embedding_type is 'word2vec').
 
         """
-        
+
         self.embedding_type = embedding_type
         self.embedding_dim = embedding_dim
         self.window_size = window_size
@@ -86,10 +86,10 @@ class TextVectorizer:
         - Tuple of vectors (Word2Vec representation) and trained Word2Vec model.
         """
         tokenized_texts = [text.split() for text in texts]
-        model = Word2Vec(tokenized_texts, vector_size=self.embedding_dim, window=self.window_size, min_count=1, workers=8)
+        vectorizer = Word2Vec(tokenized_texts, vector_size=embedding_dim, window=window_size, min_count=1, workers=8)
         vectors = []
         for tokens in tokenized_texts:
             vector = np.mean([model.wv[token] for token in tokens if token in model.wv], axis=0)
             vectors.append(vector)
-        self.vectorizer = model  # Save the Word2Vec model for future use
-        return np.array(vectors), model
+        self.vectorizer = vectorizer
+        return np.array(vectors), vectorizer

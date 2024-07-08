@@ -17,13 +17,21 @@ class PDFProcessor:
         self.input_path = input_path
 
     def read_pdf(self) -> str:
+        """
+        Read text content from a PDF file.
+
+        Returns:
+        - String containing text extracted from the PDF.
+        """
+
         reader = PdfReader(self.input_path)
         num_pages = len(reader.pages)
         text = ""
         for i, page in enumerate(reader.pages):
             if i < 3:
-                text += page.extract_text() + "\n"
+                text += page.extract_text() + "\n"  # Adding a newline as a separator between pages
         return text
+
 
     def extract_abstract_from_pdf_text(self, text: str) -> str:
         """
