@@ -1,7 +1,15 @@
 from sklearn.metrics import silhouette_score, davies_bouldin_score
 
 class Evaluator:
-    def __init__(self, vectors, labels):
+    def __init__(self, vectors: np.ndarray, labels: np.ndarray) -> None:
+        """
+        Initialization for Evaluator
+
+        Parameters:
+        - vectors: Array of input vectors for clustering.
+        - labels: Array of cluster labels.
+        """
+        
         self.vectors = vectors
         self.labels = labels
     
@@ -35,16 +43,3 @@ class Evaluator:
         silhouette_avg = silhouette_score(self.vectors, self.labels)
         davies_bouldin_avg = davies_bouldin_score(self.vectors, self.labels)
         return silhouette_avg, davies_bouldin_avg
-
-# # Example usage:
-# if __name__ == "__main__":
-#     # Example vectors and labels
-#     vectors = ...  # Replace with actual vectors
-#     labels = ...   # Replace with actual labels
-
-#     evaluator = Evaluator(vectors, labels)
-#     silhouette_score = evaluator.evaluate_silhouette_score()
-#     davies_bouldin_score = evaluator.evaluate_davies_bouldin_score()
-
-#     print(f"Silhouette Score: {silhouette_score}")
-#     print(f"Davies-Bouldin Score: {davies_bouldin_score}")

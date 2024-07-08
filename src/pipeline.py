@@ -10,9 +10,10 @@ from embedding import TextVectorizer
 from clustering import KMeansCluster
 from evaluation import Evaluator
 from visualization import ClusterVisualizer
+from utils import chunks, generate_summary_report
 
 class GreenEnergyClustering:
-    def __init__(self, input_path: str, output_path: str, embedding_type: str, embedding_dim: int, window_size: int, parallel: bool, num_workers: int) -> None:
+    def __init__(self, input_path: str, output_path: str, embedding_type: str, embedding_dim: int, window_size: int, parallel: bool, num_workers: int, visualize_method: str) -> None:
         """
         Initializes the GreenEnergyClustering instance.
 
@@ -33,33 +34,13 @@ class GreenEnergyClustering:
         self.window_size = window_size
         self.parallel = parallel
         self.num_workers = num_workers
+        self.visualize_method = visualize_method
         self.pdf_extractor = PDFExtractor()
         self.text_preprocessor = TextPreprocessor()
         self.text_vectorizer = TextVectorizer()
         self.kmeans_cluster = KMeansCluster()
         self.evaluator = Evaluator()
         self.cluster_visualizer = ClusterVisualizer()
-
-    def extract_abstracts_parallel(self, files_chunk: List[List[str]]) -> Tuple[List[str], List[str]]:
-        """
-        Extract abstracts from PDF files and preprocess them in parallel.
-
-        Parameters:
-        - files_chunk: List of file names to process.
-
-        Returns:
-        - Tuple of updated train_data and file_paths lists.
-        """
-        manager = multiprocessing.Manager()
-        train_data = manager.list()
-        file_paths = manager.list()
-
-        start_time = time()
-        with multiprocessing.Pool(processes=self.num_workers) as pool:
-            pool.starmap(self.extract_abstracts_serial, [(chunk, train_data, file_paths) for chunk in files_chunk])
-
-        print(f"Time taken for extraction: {time() - start_time:.2f} seconds")
-        return list(train_data), list(file_paths)
 
     def extract_abstracts_serial(self, files: List[str]) -> Tuple[List[str], List[str]]:
         """
@@ -71,6 +52,7 @@ class GreenEnergyClustering:
         Returns:
         - Tuple of updated train_data and file_paths lists.
         """
+
         train_data = []
         file_paths = []
         for file in files:
@@ -88,6 +70,28 @@ class GreenEnergyClustering:
         
         return train_data, file_paths
 
+    def extract_abstracts_parallel(self, files_chunk: List[List[str]]) -> Tuple[List[str], List[str]]:
+        """
+        Extract abstracts from PDF files and preprocess them in parallel.
+
+        Parameters:
+        - files_chunk: List of file names to process.
+
+        Returns:
+        - Tuple of updated train_data and file_paths lists.
+        """
+
+        manager = multiprocessing.Manager()
+        train_data = manager.list()
+        file_paths = manager.list()
+
+        start_time = time()
+        with multiprocessing.Pool(processes=self.num_workers) as pool:
+            pool.starmap(self.extract_abstracts_serial, [(chunk, train_data, file_paths) for chunk in files_chunk])
+
+        print(f"Time taken for extraction: {time() - start_time:.2f} seconds")
+        return list(train_data), list(file_paths)
+
     def extract_abstracts(self) -> Tuple[List[str], List[str]]:
         """
         Extract abstracts from PDF files and preprocess them.
@@ -95,10 +99,11 @@ class GreenEnergyClustering:
         Returns:
         - Tuple of updated train_data and file_paths lists.
         """
+
         files = os.listdir(self.input_path)
 
         # Split files into chunks corresponding to num_workers
-        files_chunk = np.array_split(files, self.num_workers)
+        files_chunk = chunks(files, self.num_workers)
 
         print("Extracting abstracts from PDF files...")
         if self.parallel:
@@ -112,6 +117,16 @@ class GreenEnergyClustering:
         return train_data, file_paths
 
     def vectorize_texts(self, train_data: List[str]) -> np.ndarray:
+        """
+        Vectorize data into embedding vectors.
+
+        Parameters:
+        - train_data: List of texts to vectorize.
+
+        Returns:
+        - Tuple of vectorizer and embedding vectors.
+        """
+
         if self.embedding_type == "tfidf":
             vectors, vectorizer = self.text_vectorizer.vectorize_texts_tfidf(train_data)
         else:
@@ -119,19 +134,50 @@ class GreenEnergyClustering:
         return vectors
 
     def run_clustering(self, vectors: np.ndarray, file_paths: List[str]):
+        """
+        Executes the clustering process.
+
+        Parameters:
+        - vectors (np.ndarray): Array of input vectors for clustering.
+        - file_paths (List[str]): List of file paths corresponding to each vector.
+
+        """
+
         optimal_clusters = self.kmeans_cluster.silhouette_analysis(vectors, self.output_path)
         kmeans, labels = self.kmeans_cluster.cluster_texts_kmeans(vectors, optimal_clusters)
         self.kmeans_cluster.generate_summary_report(labels)
         silhouette_avg, davies_bouldin_avg = self.evaluator.evaluate_clustering(vectors, labels)
         print(f"Silhouette Score: {silhouette_avg}, Davies-Bouldin Score: {davies_bouldin_avg}")
         self.save_clustering_results(labels, file_paths)
-        self.cluster_visualizer.visualize_clusters(vectors, labels, file_paths, self.output_path, "pca")
+        self.cluster_visualizer.visualize_clusters(vectors, labels, file_paths, self.output_path, self.visualize_method)
+        generate_summary_report(labels)
 
     def save_clustering_results(self, labels: np.ndarray, file_paths: List[str]) -> None:
+        """
+        Saves clustering results to a CSV file.
+
+        Parameters:
+        - labels (np.ndarray): Array of cluster labels assigned by the clustering algorithm.
+        - file_paths (List[str]): List of file paths corresponding to each data point.
+
+        """
+
         results = pd.DataFrame({'File': file_paths, 'Cluster': labels})
         results.to_csv(os.path.join(self.output_path, 'clustering_results.csv'), index=False)
 
     def run(self):
+        """
+        Executes the full pipeline for clustering Green Energy abstracts.
+
+        Steps:
+        1. Extracts abstracts from PDF files.
+        2. Vectorizes the extracted abstracts.
+        3. Performs clustering on the vectorized data.
+
+        """
+        
+        os.makedirs(self.output_path, exist_ok=True)
         train_data, file_paths = self.extract_abstracts()
         vectors = self.vectorize_texts(train_data)
         self.run_clustering(vectors, file_paths)
+

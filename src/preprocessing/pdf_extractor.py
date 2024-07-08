@@ -6,6 +6,14 @@ nlp = spacy.load("en_core_web_sm")
 
 class PDFProcessor:
     def __init__(self, input_path: str) -> None:
+        """
+        Initialization for PDFProcessor
+
+        Parameters:
+        - input_path (str): path to input dataset
+
+        """
+        
         self.input_path = input_path
 
     def read_pdf(self) -> str:

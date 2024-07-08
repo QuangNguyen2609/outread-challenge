@@ -17,8 +17,6 @@ class ClusterAnalyzer:
         - output_path: Path to save the silhouette plot.
         - init_method: Method to initialize centroid for KMeans
 
-        Returns:
-        - None
         """
 
         self.vectors = vectors
@@ -74,11 +72,3 @@ class ClusterAnalyzer:
         kmeans.fit(vectors)
         labels = kmeans.labels_
         return kmeans, labels
-
-
-    def generate_summary_report(self) -> pd.Series:
-        cluster_counts = pd.Series(self.labels).value_counts()
-        print(f"Number of clusters: {len(cluster_counts)}")
-        print("Number of papers in each cluster:")
-        print(cluster_counts)
-        return cluster_counts

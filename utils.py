@@ -72,20 +72,6 @@ def visualize_clusters(vectors: np.ndarray, labels: np.ndarray, titles: List[str
     fig = dict(data=data, layout=layout)
     pyo.plot(fig, filename=os.path.join(output_path, 'cluster_visualization.html'))
 
-def chunks(lst: list, n: int) -> List:
-    """
-    Yield successive n-sized chunks from lst.
-
-    Parameters:
-    - lst: List to split into chunks.
-    - n: Size of each chunk.
-
-    Returns:
-    - Generator yielding lists of size n from lst.
-    """
-
-    for i in range(0, len(lst), n):
-        yield lst[i:i + n]
 
 def read_pdf(file_path: str) -> str:
     """

@@ -20,6 +20,38 @@ This project aims to cluster a set of research papers based on the similarity of
     ```bash
     python -m nltk.downloader stopwords punkt wordnet
     python -m spacy download en
+## Project Structure
+The project is structured to maintain clarity and organization:
+ + main.py: main script to run the pipeline
+ + src: Contains all source code files.
+    + utils.py: Utility functions used across modules.
+    + pipeline.py: Orchestrates the Green Energy Clustering pipeline.
+    + Functional Modules
+        + cluster_analyzer.py: Implements clustering algorithms and analysis.
+        + text_vectorizer.py: Provides methods for text vectorization.
+        + evaluator.py:  Evaluates clustering performance.
+        + pdf_extractor.py: Extracts text and abstracts from PDF files.
+        + text_preprocessor.py: Cleans and preprocesses text data.
+        + cluster_visualizer.py: Visualizes clustering results.
+
+    ```
+    ├── README.md
+    ├── main.py
+    ├── src
+    │   ├── utils.py
+    │   ├── pipeline.py
+    │   ├── clustering
+    │   │   └── cluster_analyzer.py
+    │   ├── embedding
+    │   │   └── text_vectorizer.py
+    │   ├── evaluation
+    │   │   └── evaluator.py
+    │   ├── preprocessing
+    │   │   ├── pdf_extractor.py
+    │   │   └── text_preprocessor.py
+    │   └── visualization
+    │       ├── __init__.py
+    │       └── cluster_visualizer.py
 ## Usage
 ### Running the Clustering Script
 To run the research paper clustering script, execute the following command from the project root directory:

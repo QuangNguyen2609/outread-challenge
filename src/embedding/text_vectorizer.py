@@ -28,6 +28,16 @@ import numpy as np
 
 class TextVectorizer:
     def __init__(self, embedding_type: str, embedding_dim: int, window_size: int):
+        """
+        Initialization for TextVectorizer
+
+        Parameters:
+        - embedding_type (str): Type of embedding to use ('tfidf' or 'word2vec').
+        - embedding_dim (int): Dimensionality of the embedding vectors.
+        - window_size (int): Window size for Word2Vec model (applicable only if embedding_type is 'word2vec').
+
+        """
+        
         self.embedding_type = embedding_type
         self.embedding_dim = embedding_dim
         self.window_size = window_size
