@@ -8,18 +8,19 @@ import numpy as np
 from time import time
 from tqdm import tqdm
 from src.preprocessing import PDFProcessor, TextPreprocessor
-from src.embedding import TextVectorizer
-from src.clustering import ClusterAnalyzer
+from src.embedding import TFIDFVectorizer, Word2VecVectorizer
+from src.clustering import KMeansCluster, DBSCANCluster, HierarchicalCluster
 from src.evaluation import Evaluator
 from src.visualization import ClusterVisualizer
-from utils import chunks, generate_summary_report
+from utils import chunks, generate_summary_report, save_clustering_results
 
 class GreenEnergyClustering:
     def __init__(self, input_path: str, output_path: str, embedding_type: str,
                  embedding_dim: int, window_size: int, parallel: bool, num_workers: int, 
-                 visualize_method: str, init_method: str, max_clusters: range, seed: int, verbose: bool) -> None:
+                 visualize_method: str, init_method: str, max_clusters: range, seed: int,
+                 verbose: bool, clustering_method: str, eps: float, min_samples: int, linkage: str) -> None:
         """
-        Initializes the GreenEnergyClustering instance.
+        Initialize the GreenEnergyClustering instance.
 
         Parameters:
         - input_path: str - Path to the directory containing input PDF files with abstracts to be clustered.
@@ -34,6 +35,9 @@ class GreenEnergyClustering:
         - max_clusters: int - Maximum number of clusters to evaluate.
         - seed: int - Random seed for reproducibility.
         - verbose: bool - Flag indicating whether to print verbose output during the process is running.
+        - eps: Maximum distance between two samples for them to be considered as in the same neighborhood (for DBSCAN).
+        - min_samples: Number of samples in a neighborhood for a point to be considered as a core point (for DBSCAN).
+        - linkage: Which linkage criterion to use. Options are 'ward', 'complete', 'average', 'single' (for Hierachical).
         """
 
         self.input_path = input_path
@@ -48,10 +52,12 @@ class GreenEnergyClustering:
         self.seed = seed
         self.verbose = verbose
         self.n_clusters_range = range(2, max_clusters+1)
+        self.clustering_method = clustering_method
+        self.eps = eps 
+        self.min_samples = min_samples
+        self.linkage = linkage
         self.pdf_extractor = PDFProcessor()
         self.text_preprocessor = TextPreprocessor()
-        self.text_vectorizer = TextVectorizer(embedding_type, embedding_dim, window_size)
-        self.kmeans_cluster = ClusterAnalyzer(output_path, init_method, seed, verbose)
         self.evaluator = Evaluator()
         self.cluster_visualizer = ClusterVisualizer(output_path, visualize_method)
 
@@ -140,7 +146,11 @@ class GreenEnergyClustering:
         - Tuple of vectorizer and embedding vectors.
         """
 
-        vectors, vectorizer = self.text_vectorizer.vectorize_texts(train_data)
+        if self.embedding_type == "word2vec":
+            vectorizer = Word2VecVectorizer(self.embedding_dim, self.window_size)
+        else:
+            vectorizer = TFIDFVectorizer()
+        vectors, vectorizer = vectorizer.vectorize_texts(train_data)
         return vectors, vectorizer
 
     def run_clustering(self, vectors: np.ndarray, file_paths: List[str], n_clusters_range: range):
@@ -152,32 +162,32 @@ class GreenEnergyClustering:
         - file_paths (List[str]): List of file paths corresponding to each vector.
 
         """
-        print("Running Silhouette Analysis to find optimal number of clusters...")
-        optimal_clusters = self.kmeans_cluster.silhouette_analysis(vectors, n_clusters_range)
-        print("Running KMeans clustering using optimal number of clusters...")
-        kmeans, labels = self.kmeans_cluster.cluster_texts_kmeans(vectors, optimal_clusters)
-        print("Evaluating clustering results")
+
+        print(f"{self.clustering_method} has been chosen as clustering method...")
+        optimal_clusters = None
+        if self.clustering_method == "kmeans":
+            clusterer = KMeansCluster(vectors, self.output_path, self.verbose, self.init_method, self.seed)
+            optimal_clusters = clusterer.silhouette_analysis()
+            model, labels = clusterer.cluster_texts(optimal_clusters)
+        elif self.clustering_method == "dbscan":
+            clusterer = DBSCANCluster(vectors, self.output_path, self.verbose, self.eps, self.min_samples)
+            model, labels = clusterer.cluster_texts()
+        elif self.clustering_method == "hierarchical":
+            clusterer = HierarchicalCluster(vectors, self.output_path, self.verbose, self.linkage)
+            optimal_clusters = clusterer.silhouette_analysis()
+            model, labels = clusterer.cluster_texts(n_clusters=optimal_clusters)
+        else:
+            raise ValueError("Unsupported clustering method")
+
+        print("Evaluating clustering results...")
         silhouette_avg, davies_bouldin_avg = self.evaluator.evaluate_clustering(vectors, labels)
-        print(f"\_The optimal number of clusters is: {optimal_clusters}")
+        if optimal_clusters:
+            print(f"\_The optimal number of clusters is: {optimal_clusters}")
         print(f"\_Silhouette Score: {silhouette_avg}, Davies-Bouldin Score: {davies_bouldin_avg}")
-        self.save_clustering_results(labels, file_paths)
+        save_clustering_results(labels, file_paths, self.output_path)
         self.cluster_visualizer.visualize_clusters(vectors, labels, file_paths)
-        if self.verbose:
-            generate_summary_report(labels)
+        generate_summary_report(labels)
         print("Clustering process completed successfully!")
-
-    def save_clustering_results(self, labels: np.ndarray, file_paths: List[str]) -> None:
-        """
-        Saves clustering results to a CSV file.
-
-        Parameters:
-        - labels (np.ndarray): Array of cluster labels assigned by the clustering algorithm.
-        - file_paths (List[str]): List of file paths corresponding to each data point.
-
-        """
-
-        results = pd.DataFrame({'File': file_paths, 'Cluster': labels})
-        results.to_csv(os.path.join(self.output_path, 'clustering_results.csv'), index=False)
 
     def run(self):
         """

@@ -15,6 +15,11 @@ def arg_parser():
     parser.add_argument("--max_clusters", type=int, default=10, help='Maximum number of clusters to evaluate')
     parser.add_argument("--seed", type=int, default=42, help='Random seed for reproducibility')
     parser.add_argument("--verbose", action='store_true', help='Print verbose output during the process')
+    parser.add_argument("--clustering_method", type=str, default='kmeans', help="Clustering method to use (e.g., 'kmeans', 'dbscan', 'hierarchical')")
+    parser.add_argument("--eps", type=float, default=0.5, help="Epsilon value for DBSCAN clustering")
+    parser.add_argument("--min_samples", type=int, default=5, help="Minimum number of samples for DBSCAN clustering")
+    parser.add_argument("--linkage", type=str, default='ward', help="Linkage criterion for hierarchical clustering (e.g., 'ward', 'complete', 'average', 'single')")
+
     return parser.parse_args()
 
 def main(args):
@@ -30,7 +35,11 @@ def main(args):
         init_method=args.init_method,
         max_clusters=args.max_clusters,
         seed=args.seed,
-        verbose=args.verbose
+        verbose=args.verbose,
+        clustering_method=args.clustering_method
+        eps=args.eps,
+        min_samples=args.min_samples
+        linkage=args.linkage
     )
     clustering.run()
 

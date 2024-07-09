@@ -1,1 +1,1 @@
-from .text_vectorizer import TextVectorizer
+from .text_vectorizer import Word2VecVectorizer, TFIDFVectorizer

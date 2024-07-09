@@ -58,18 +58,19 @@ The project is structured to maintain clarity and organization:
 ### Running the Clustering Script
 To run the research paper clustering script, execute the following command from the project root directory:
 ```
-python main.py --input_path Green_Energy_Dataset/ --output_path results/ --embedding_type word2vec --embedding_dim 150 --window_size 30 --parallel --num_worker 20 --visualize_method pca --init_method k-means++ --max_clusters 9 --seed 50 --verbose
+python main.py --input_path Green_Energy_Dataset/ --output_path results/ -- clustering_method kmeans --embedding_type word2vec --embedding_dim 150 --window_size 30 --parallel --num_worker 20 --visualize_method pca --init_method k-means++ --max_clusters 9 --seed 50 --verbose
 ```
 Parameters:
 
 + **--input_path**: Path to the input dataset containing the research papers in PDF format.
 + **--output_path**: Directory path where the clustering results and visualizations will be saved.
++ **--clustering_method**: Clustering algorithm to use for our pipeline.
 + **--embedding_type**: Type of embedding to use for text vectorization. Options are "word2vec" or "tfidf".
 + **--embedding_dim**: Dimension of the word embeddings.
 + **--window_size**: Window size for the Word2Vec model.
 + -**-parallel**: Enable parallel processing for faster execution.
 + **--num_worker**: Number of processes to use for parallel processing the pdf files
-+ **--visualize_method**: Dimensionality reduction method to visualize clustering result. Options can include "pca", "tsne", etc.
++ **--visualize_method**: Dimensionality reduction method to visualize clustering result. Options can include "pca", "tsne".
 + **--init_method**: Initialization method for KMeans clustering. Options can include "k-means++", "random", etc.
 + **--max_clusters**: Maximum number of clusters to evaluate for optimal clustering.
 + **--seed**: Random seed for reproducibility.
@@ -97,7 +98,12 @@ After running the script, the following outputs will be generated in the specifi
 + **Word2Vec Embeddings**: Utilizes Word2Vec embeddings from the gensim library to represent text data as dense vectors. This captures semantic relationships between words and allows for measuring similarity between research paper abstracts based on their content.
 
 ### Clustering
-**K-means Clustering**: Implements K-means clustering to group research papers into clusters based on Embedding vectors. Determines the optimal number of clusters using silhouette analysis. There are two options for initialization are `random` and `k-means++`.
+
++ **K-means Clustering**: Implements K-means clustering to group research papers into clusters based on embedding vectors. Determines the optimal number of clusters using silhouette analysis. There are two options for initialization: `random` and `k-means++`.
+
++ **DBSCAN Clustering**: Implements DBSCAN (Density-Based Spatial Clustering of Applications with Noise) to group research papers into clusters based on embedding vectors. It automatically finds the number of clusters based on density and can handle noise points. Key parameters include `eps` (maximum distance between two samples to be considered as in the same neighborhood) and `min_samples` (number of samples in a neighborhood for a point to be considered as a core point).
++ **Hierarchical Clustering**: Implements hierarchical clustering to group research papers into clusters based on embedding vectors. It builds a hierarchy of clusters and allows for different `linkage` methods such as `ward`, `complete`, `average`, and `single`. The number of clusters can be determined by specifying the desired number of clusters.
+
 
 ### Evaluation
 Evaluates clustering performance using `silhouette score` and `Davies-Bouldin Index` to measure how similar each paper is to its own cluster compared to other clusters.
