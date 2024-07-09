@@ -58,7 +58,7 @@ The project is structured to maintain clarity and organization:
 ### Running the Clustering Script
 To run the research paper clustering script, execute the following command from the project root directory:
 ```
-python main.py --input_path Green_Energy_Dataset/ --output_path results/ -- clustering_method kmeans --embedding_type word2vec --embedding_dim 150 --window_size 30 --parallel --num_worker 20 --visualize_method pca --init_method k-means++ --max_clusters 9 --seed 50 --verbose
+python main.py --input_path Green_Energy_Dataset/ --output_path results/ --clustering_method kmeans --embedding_type word2vec --embedding_dim 150 --window_size 10 --parallel --num_worker 20 --visualize_method pca --init_method k-means++ --max_clusters 9 --seed 50 --verbose
 ```
 Parameters:
 
@@ -81,7 +81,7 @@ After running the script, the following outputs will be generated in the specifi
 
 + `clustering_results.csv` : CSV file containing the clustering results, showing which papers belong to each cluster.
 
-+ `summary_report.txt` : Text file summarizing the clustering results, including the number of clusters, number of papers in each cluster, and key terms/topics associated with each cluster.
++ `silhouette_analysis.png` : 
 
 + `cluster_visualization.html` : HTML file containing a visual representation of the clustering results using PCA.
 
@@ -111,3 +111,43 @@ Evaluates clustering performance using `silhouette score` and `Davies-Bouldin In
 ### Visualization
 PCA Visualization: Visualizes clustering results in a 2D space using Principal Component Analysis (PCA). Displays research paper titles in a scatter plot to provide context for each cluster.
 
+## Experiments
+
+### Outlier
++ When using DBSCAN, i detect this outlier that when i read text using Py2PDF from this pdf (huang-et-al-2022-bacterial-growth-induced-tobramycin-smart-release-self-healing-hydrogel-for-pseudomonas-aeruginosa.pdf), the words are sticking to each other which make it impossible to analyze and might affect the clustering result so i remove it from the extracted abstract lists.
+    ```
+    ABSTRACT:
+    Burnsareacommonhealthproblemworldwideandare
+    highlysusceptibletobacterialinfectionsthataredifficulttohandlewith
+    ordinarywounddressings.Therefore,burnwoundrepairisextremely
+    challenginginclinicalpractice.Herein,aseriesofself-healinghydrogels
+    (QCS/OD/TOB/PPY@PDA) withgoodelectricalconductivity and
+    antioxidantactivitywerepreparedonthebasisofquaternizedchitosan
+    (QCS),oxidizeddextran(OD),tobramycin(TOB),andpolydopamine-
+    coatedpolypyrrolenanowires(PPY@PDANWs).TheseSchiffbasecross-
+    linksbetweentheaminoglycoside antibioticTOBandODenableTOBto
+    beslowlyreleasedandresponsivetopH.Interestingly, theacidic
+    substancesduringthebacteriagrowthprocesscaninducetheon-demand
+    releaseofTOB,avoidingtheabuseofantibiotics
+    ```
+
+### Performance of different embedding method
+
++ As clear as we can see, Word2Vec outperforms TF-IDF as an Embedding model to vectorize abstract texts
+
+    | Embedding method | Silhouette Score | Davies-Bouldin Index |
+    |---------------------|-------------|------------------|
+    | Word2Vec            | 0.55        |     0.64         |
+    | TF-IDF              | 0.05        |     3.05         |
+
+### Effect of Embedding Dimension and Window Size:
+
+
++ Increasing the embedding dimension from 100 to 150 consistently improves both the silhouette score and the Davies-Bouldin index, suggesting better clustering quality.
++ Increasing the window size from 10 to 30 (with embedding dimension 100) also results in better clustering performance, with higher silhouette scores and lower Davies-Bouldin index values.
+
+    | Embedding Dimension | Window Size | Silhouette Score | Davies-Bouldin Index |
+    |---------------------|-------------|------------------|----------------------|
+    | 100                 | 10          |     0.56         | 0.54                 |
+    | 150                 | 10          |     0.59         | 0.46                 |
+    | 100                 | 30          |     0.57         | 0.48                 |

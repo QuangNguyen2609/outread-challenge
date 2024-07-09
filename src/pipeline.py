@@ -17,7 +17,7 @@ from utils import chunks, generate_summary_report, save_clustering_results
 class GreenEnergyClustering:
     def __init__(self, input_path: str, output_path: str, embedding_type: str,
                  embedding_dim: int, window_size: int, parallel: bool, num_workers: int, 
-                 visualize_method: str, init_method: str, max_clusters: range, seed: int,
+                 visualize_method: str, init_method: str, max_clusters: range, seed: int, sg: int,
                  verbose: bool, clustering_method: str, eps: float, min_samples: int, linkage: str) -> None:
         """
         Initialize the GreenEnergyClustering instance.
@@ -35,6 +35,7 @@ class GreenEnergyClustering:
         - max_clusters: int - Maximum number of clusters to evaluate.
         - seed: int - Random seed for reproducibility.
         - verbose: bool - Flag indicating whether to print verbose output during the process is running.
+        - sg: int - Training algorithm (0 for CBOW, 1 for Skip-gram) for Word2Vec.
         - eps: Maximum distance between two samples for them to be considered as in the same neighborhood (for DBSCAN).
         - min_samples: Number of samples in a neighborhood for a point to be considered as a core point (for DBSCAN).
         - linkage: Which linkage criterion to use. Options are 'ward', 'complete', 'average', 'single' (for Hierachical).
@@ -56,6 +57,7 @@ class GreenEnergyClustering:
         self.eps = eps 
         self.min_samples = min_samples
         self.linkage = linkage
+        self.sg = sg
         self.pdf_extractor = PDFProcessor()
         self.text_preprocessor = TextPreprocessor()
         self.evaluator = Evaluator()
@@ -75,9 +77,12 @@ class GreenEnergyClustering:
             file_path = os.path.join(self.input_path, file)
             pdf_text = self.pdf_extractor.read_pdf(file_path)
             abstract_text = self.pdf_extractor.extract_abstract_from_pdf_text(pdf_text)
+            if len(abstract_text.split()) <= 1:
+                # remove outlier case
+                continue
             if abstract_text == "No abstract found.":
                 paragraphs = re.split(r'\n\s*\n', pdf_text)
-                fallback_abstract = " ".join(paragraphs[:2])
+                fallback_abstract = " ".join(paragraphs[:3])
                 fallback_abstract = self.pdf_extractor.filter_title_and_author(fallback_abstract)
                 abstract_text = fallback_abstract.strip()
             preprocessed_abstracts = self.text_preprocessor.preprocess_text(abstract_text)
@@ -147,13 +152,13 @@ class GreenEnergyClustering:
         """
 
         if self.embedding_type == "word2vec":
-            vectorizer = Word2VecVectorizer(self.embedding_dim, self.window_size)
+            vectorizer = Word2VecVectorizer(self.embedding_dim, self.window_size, self.sg, self.seed)
         else:
             vectorizer = TFIDFVectorizer()
         vectors, vectorizer = vectorizer.vectorize_texts(train_data)
         return vectors, vectorizer
 
-    def run_clustering(self, vectors: np.ndarray, file_paths: List[str], n_clusters_range: range):
+    def run_clustering(self, train_data: list[str], vectors: np.ndarray, file_paths: List[str], n_clusters_range: range):
         """
         Executes the clustering process.
 
@@ -183,10 +188,10 @@ class GreenEnergyClustering:
         silhouette_avg, davies_bouldin_avg = self.evaluator.evaluate_clustering(vectors, labels)
         if optimal_clusters:
             print(f"\_The optimal number of clusters is: {optimal_clusters}")
-        print(f"\_Silhouette Score: {silhouette_avg}, Davies-Bouldin Score: {davies_bouldin_avg}")
+        print(f"\_Silhouette Score: {silhouette_avg}, Davies-Bouldin Index: {davies_bouldin_avg}")
         save_clustering_results(labels, file_paths, self.output_path)
         self.cluster_visualizer.visualize_clusters(vectors, labels, file_paths)
-        generate_summary_report(labels)
+        generate_summary_report(train_data, labels)
         print("Clustering process completed successfully!")
 
     def run(self):
@@ -203,5 +208,5 @@ class GreenEnergyClustering:
         os.makedirs(self.output_path, exist_ok=True)
         train_data, file_paths = self.extract_abstracts()
         vectors, vectorizer = self.vectorize_texts(train_data)
-        self.run_clustering(vectors, file_paths, self.n_clusters_range)
+        self.run_clustering(train_data, vectors, file_paths, self.n_clusters_range)
 

@@ -19,6 +19,7 @@ def arg_parser():
     parser.add_argument("--eps", type=float, default=0.5, help="Epsilon value for DBSCAN clustering")
     parser.add_argument("--min_samples", type=int, default=5, help="Minimum number of samples for DBSCAN clustering")
     parser.add_argument("--linkage", type=str, default='ward', help="Linkage criterion for hierarchical clustering (e.g., 'ward', 'complete', 'average', 'single')")
+    parser.add_argument("--sg", type=int, default=0, help="Training algorithm for Word2Vec (0 for CBOW, 1 for Skip-gram)")
 
     return parser.parse_args()
 
@@ -36,10 +37,11 @@ def main(args):
         max_clusters=args.max_clusters,
         seed=args.seed,
         verbose=args.verbose,
-        clustering_method=args.clustering_method
+        clustering_method=args.clustering_method,
         eps=args.eps,
-        min_samples=args.min_samples
-        linkage=args.linkage
+        min_samples=args.min_samples,
+        linkage=args.linkage,
+        sg=args.sg
     )
     clustering.run()
 
