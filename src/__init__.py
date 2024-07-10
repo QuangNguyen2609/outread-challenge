@@ -2,7 +2,7 @@ from .preprocessing import TextPreprocessor, PDFProcessor
 from .clustering import KMeansCluster, DBSCANCluster, HierarchicalCluster
 from .evaluation import Evaluator
 from .visualization import ClusterVisualizer
-from .pipeline import GreenEnergyClustering
+from .pipeline import Pipeline
 from .embedding import Word2VecVectorizer, TFIDFVectorizer
 
 __all__ = [
@@ -16,5 +16,5 @@ __all__ = [
     "KMeansClustering",
     "DBSCANClustering",
     "HierarchicalClustering",
-    "GreenEnergyClustering",
+    "Pipeline",
 ]

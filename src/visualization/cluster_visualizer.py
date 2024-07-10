@@ -8,7 +8,7 @@ import plotly.offline as pyo
 from typing import List
 
 class ClusterVisualizer:
-    def __init__(self, output_path: str, visualize_method: str) -> None:
+    def __init__(self, output_path: str, visualize_method: str, max_clusters: int) -> None:
         """
         Initialization for ClusterAnalyzer
 
@@ -16,14 +16,31 @@ class ClusterVisualizer:
         - output_path: Path to save the silhouette plot.
         - visualize_method: Dimensionality reduction method to visualize
         - init_method: Method to initialize centroid for KMeans
+        - max_clusters: Maximum number of cluster we can reach
 
         """
 
         self.output_path = output_path
         self.visualize_method = visualize_method
-        self.colors = ['rgba(255, 128, 255, 0.8)', 'rgba(255, 128, 2, 0.8)', 'rgba(0, 255, 200, 0.8)', 'rgba(0, 128, 255, 0.8)', 
-                       'rgba(255, 0, 0, 0.8)', 'rgba(255, 255, 0, 0.8)', 'rgba(0, 255, 255, 0.8)', 'rgba(128, 0, 255, 0.8)', 
-                       'rgba(255, 128, 0, 0.8)']
+        self.max_clusters = max_clusters
+        self.colors = self.generate_colors()
+        
+    def generate_colors(self) -> List[str]:
+        """
+        Generate a list of colors based on the maximum number of clusters.
+
+        Returns:
+        - List of RGBA color strings.
+        """
+
+        colors = []
+        for i in range(self.max_clusters):
+            red = int(255 * (i / self.max_clusters))
+            green = int(128 * ((self.max_clusters - i) / self.max_clusters))
+            blue = int(255 * ((i + 1) / self.max_clusters))
+            color = f'rgba({red}, {green}, {blue}, 0.8)'
+            colors.append(color)
+        return colors
 
     def visualize_clusters(self, vectors: np.ndarray, labels: np.ndarray, titles: List[str]) -> None:
         """
@@ -64,10 +81,12 @@ class ClusterVisualizer:
             )
             data.append(trace)
 
-        title = "Visualizing Clusters in Two Dimensions Using " + self.visualize_method.upper()
+        title = f"Visualizing Clusters in Two Dimensions Using {self.visualize_method.upper()}"
         layout = dict(title=title,
-                      xaxis=dict(title='PC1' if self.visualize_method == 'pca' else 't-SNE1', ticklen=5, zeroline=False),
-                      yaxis=dict(title='PC2' if self.visualize_method == 'pca' else 't-SNE2', ticklen=5, zeroline=False)
+                      xaxis=dict(title='PC1' if self.visualize_method == 'pca' else 't-SNE1', 
+                                 ticklen=5, zeroline=False),
+                      yaxis=dict(title='PC2' if self.visualize_method == 'pca' else 't-SNE2',
+                                  ticklen=5, zeroline=False)
                      )
 
         fig = dict(data=data, layout=layout)

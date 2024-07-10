@@ -16,6 +16,14 @@ class TextPreprocessor:
         """
         Preprocess text to normalize and standardize our input.
 
+        Steps:
+        1. Convert text to lowercase.
+        2. Remove all non-alphabetic characters.
+        3. Tokenize the text into words.
+        4. Remove stop words.
+        5. Lemmatize each word.
+        6. Join the words back into a single string.
+        
         Parameters:
         - text: Input text.
 
@@ -23,17 +31,11 @@ class TextPreprocessor:
         - Preprocessed text as a string.
         """
 
-        # Convert to lowercase
         text = text.lower()
-        # Remove special characters and digits
         text = re.sub(r'[^a-zA-Z\s]', '', text)
-        # Tokenize the text
         words = word_tokenize(text)
-        # Remove stop words
         stop_words = set(stopwords.words('english'))
         words = [word for word in words if word not in stop_words]
-        # Lemmatize the words
         lemmatizer = WordNetLemmatizer()
         words = [lemmatizer.lemmatize(word) for word in words]
-        # Join the words back into a single string
         return ' '.join(words)

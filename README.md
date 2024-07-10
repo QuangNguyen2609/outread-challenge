@@ -133,11 +133,25 @@ PCA Visualization: Visualizes clustering results in a 2D space using Principal C
 
 ### Performance of different embedding method
 
-+ As clear as we can see, Word2Vec outperforms TF-IDF as an Embedding model to vectorize abstract texts
+- As clear as we can see, Word2Vec outperforms TF-IDF as an Embedding model to vectorize abstract texts. There are several reasons why this happens:
+1. Semantic Similarity
+    - **Word2Vec**: Captures semantic relationships between words. Words with similar meanings are placed closer together in the vector space, allowing for a more nuanced understanding of the content.
+    - **TF-IDF**: Focuses on the frequency of terms, which can miss semantic relationships between words. It treats each word independently without capturing the context or meaning.
+2. Contextual Understanding
+    - **Word2Vec**: Takes into account the context in which words appear, allowing it to generate embeddings that capture the meaning of words in different contexts. This is particularly useful in research papers where context can significantly change the meaning of terms.
+    - **TF-IDF**: Does not consider the context, only the frequency and rarity of words. This can lead to less meaningful clusters if words have multiple meanings or if important context is lost.
+
+3. Handling Synonyms and Polysemy
+    - **Word2Vec**: Can handle synonyms effectively since similar words have similar vectors. It also deals with polysemy (words with multiple meanings) by placing words in a context-specific manner.
+    - **TF-IDF**: Treats each word as unique, so it cannot recognize synonyms or handle polysemy well. Words with similar meanings will be treated as completely different, leading to poorer clustering performance.
+
+4. Small Dataset Advantage
+    - **Word2Vec**: Can still generate meaningful embeddings even with a relatively small dataset, as it captures word relationships effectively. The learned embeddings generalize well to new data.
+    - **TF-IDF**: May struggle with small datasets because the term frequencies and inverse document frequencies might not be stable or meaningful with limited data. This can lead to poor clustering performance.
 
     | Embedding method | Silhouette Score | Davies-Bouldin Index |
     |---------------------|-------------|------------------|
-    | Word2Vec            | 0.55        |     0.64         |
+    | Word2Vec            | 0.56        |     0.54         |
     | TF-IDF              | 0.05        |     3.05         |
 
 ### Effect of Embedding Dimension and Window Size:

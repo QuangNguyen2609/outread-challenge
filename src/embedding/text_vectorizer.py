@@ -8,9 +8,7 @@ class TFIDFVectorizer(AbstractTextVectorizer):
     def __init__(self) -> None:
         """
         Initialization for TFIDFVectorizer
-
-        Parameters:
-        - embedding_dim (int): Dimensionality of the embedding vectors (not used for TFIDF).
+        
         """
         super().__init__()
 
@@ -58,11 +56,14 @@ class Word2VecVectorizer(AbstractTextVectorizer):
         - Tuple of vectors (Word2Vec representation) and trained Word2Vec model.
         """
         tokenized_texts = [text.split() for text in texts]
-        vectorizer = Word2Vec(tokenized_texts, vector_size=self.embedding_dim, window=self.window_size, seed=self.seed)
+        vectorizer = Word2Vec(
+            tokenized_texts,
+            vector_size=self.embedding_dim,
+            window=self.window_size,
+            seed=self.seed
+        )
         vectors = []
         for tokens in tokenized_texts:
-            if len(tokens) <= 1:
-                continue
             vector = np.mean([vectorizer.wv[token] for token in tokens if token in vectorizer.wv], axis=0)
             vectors.append(vector)
         self.vectorizer = vectorizer

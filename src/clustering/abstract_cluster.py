@@ -42,7 +42,7 @@ class AbstractCluster(ABC):
             silhouette_avg = silhouette_score(self.vectors, labels)
             silhouette_avg_scores.append(silhouette_avg)
             if self.verbose:
-                print(f"For n_clusters = {n_clusters}, the silhouette score is {silhouette_avg}")
+                print(f"For n_clusters = {n_clusters}, the silhouette score = {silhouette_avg}")
         print("Visualizing clustering result...")
         plt.figure()
         plt.plot(range_n_clusters, silhouette_avg_scores, marker='o')

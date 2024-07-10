@@ -5,15 +5,15 @@ from PyPDF2 import PdfReader
 nlp = spacy.load("en_core_web_sm")
 
 class PDFProcessor:
-    def __init__(self) -> None:
+    def __init__(self, input_path: str) -> None:
         """
         Initialization for PDFProcessor
 
         """
 
-        pass
+        self.input_path = input_path
 
-    def read_pdf(self, input_path: str) -> str:
+    def read_pdf(self) -> str:
         """
         Read text content from a PDF file.
 
@@ -21,7 +21,7 @@ class PDFProcessor:
         - String containing text extracted from the PDF.
         """
 
-        reader = PdfReader(input_path)
+        reader = PdfReader(self.input_path)
         num_pages = len(reader.pages)
         text = ""
         for i, page in enumerate(reader.pages):
@@ -49,7 +49,11 @@ class PDFProcessor:
             abstract_text = abstract[0][1].strip()
         else:
             # If no match, try another regex pattern that looks for "Abstract" followed by text, ending before a double newline or specific capitalization pattern
-            abstract_match = re.search(r"(?i)abstract\s*:?\s*(.*?)(?:\n\n|\n(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s*\n)|$)", text, re.DOTALL) 
+            abstract_match = re.search(
+                                r"(?i)abstract\s*:?\s*(.*?)(?:\n\n|\n(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s*\n)|$)", 
+                                text, 
+                                re.DOTALL
+                            ) 
             if abstract_match:
                 abstract_text = abstract_match.group(1).strip()
             else:
@@ -68,7 +72,6 @@ class PDFProcessor:
         - Filtered text as a string.
         """
 
-        # Use spaCy to identify named entities and filter out sentences containing them
         doc = nlp(text)
         filtered_sentences = []
         for sent in doc.sents:

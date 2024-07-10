@@ -3,9 +3,7 @@ import re
 import multiprocessing
 from time import time
 from typing import List, Tuple
-import pandas as pd
 import numpy as np
-from time import time
 from tqdm import tqdm
 from src.preprocessing import PDFProcessor, TextPreprocessor
 from src.embedding import TFIDFVectorizer, Word2VecVectorizer
@@ -14,13 +12,13 @@ from src.evaluation import Evaluator
 from src.visualization import ClusterVisualizer
 from utils import chunks, generate_summary_report, save_clustering_results
 
-class GreenEnergyClustering:
+class Pipeline:
     def __init__(self, input_path: str, output_path: str, embedding_type: str,
                  embedding_dim: int, window_size: int, parallel: bool, num_workers: int, 
                  visualize_method: str, init_method: str, max_clusters: range, seed: int, sg: int,
                  verbose: bool, clustering_method: str, eps: float, min_samples: int, linkage: str) -> None:
         """
-        Initialize the GreenEnergyClustering instance.
+        Initialize the Pipeline instance.
 
         Parameters:
         - input_path: str - Path to the directory containing input PDF files with abstracts to be clustered.
@@ -52,13 +50,13 @@ class GreenEnergyClustering:
         self.init_method = init_method
         self.seed = seed
         self.verbose = verbose
-        self.n_clusters_range = range(2, max_clusters+1)
+        self.n_clusters_range = range(2, max_clusters + 1)
         self.clustering_method = clustering_method
         self.eps = eps 
         self.min_samples = min_samples
         self.linkage = linkage
         self.sg = sg
-        self.pdf_extractor = PDFProcessor()
+        self.pdf_extractor = PDFProcessor(input_path)
         self.text_preprocessor = TextPreprocessor()
         self.evaluator = Evaluator()
         self.cluster_visualizer = ClusterVisualizer(output_path, visualize_method)
@@ -73,6 +71,7 @@ class GreenEnergyClustering:
         Returns:
         - Tuple of updated train_data and file_paths lists.
         """
+
         for file in tqdm(files):
             file_path = os.path.join(self.input_path, file)
             pdf_text = self.pdf_extractor.read_pdf(file_path)
@@ -107,7 +106,8 @@ class GreenEnergyClustering:
         file_paths = manager.list()
 
         with multiprocessing.Pool(processes=self.num_workers) as pool:
-            pool.starmap(self.extract_abstracts_serial, [(chunk, train_data, file_paths) for chunk in files_chunk])
+            pool.starmap(self.extract_abstracts_serial, 
+                         [(chunk, train_data, file_paths) for chunk in files_chunk])
 
         return list(train_data), list(file_paths)
 
@@ -152,13 +152,15 @@ class GreenEnergyClustering:
         """
 
         if self.embedding_type == "word2vec":
-            vectorizer = Word2VecVectorizer(self.embedding_dim, self.window_size, self.sg, self.seed)
+            vectorizer = Word2VecVectorizer(self.embedding_dim, self.window_size, 
+                                            self.sg, self.seed)
         else:
             vectorizer = TFIDFVectorizer()
         vectors, vectorizer = vectorizer.vectorize_texts(train_data)
         return vectors, vectorizer
 
-    def run_clustering(self, train_data: list[str], vectors: np.ndarray, file_paths: List[str], n_clusters_range: range):
+    def run_clustering(self, train_data: list[str], vectors: np.ndarray, 
+                       file_paths: List[str], n_clusters_range: range) -> None:
         """
         Executes the clustering process.
 
@@ -171,14 +173,17 @@ class GreenEnergyClustering:
         print(f"{self.clustering_method} has been chosen as clustering method...")
         optimal_clusters = None
         if self.clustering_method == "kmeans":
-            clusterer = KMeansCluster(vectors, self.output_path, self.verbose, self.init_method, self.seed)
+            clusterer = KMeansCluster(vectors, self.output_path, 
+                                      self.verbose, self.init_method, self.seed)
             optimal_clusters = clusterer.silhouette_analysis()
             model, labels = clusterer.cluster_texts(optimal_clusters)
         elif self.clustering_method == "dbscan":
-            clusterer = DBSCANCluster(vectors, self.output_path, self.verbose, self.eps, self.min_samples)
+            clusterer = DBSCANCluster(vectors, self.output_path, 
+                                      self.verbose, self.eps, self.min_samples)
             model, labels = clusterer.cluster_texts()
         elif self.clustering_method == "hierarchical":
-            clusterer = HierarchicalCluster(vectors, self.output_path, self.verbose, self.linkage)
+            clusterer = HierarchicalCluster(vectors, self.output_path,
+                                            self.verbose, self.linkage)
             optimal_clusters = clusterer.silhouette_analysis()
             model, labels = clusterer.cluster_texts(n_clusters=optimal_clusters)
         else:
@@ -194,7 +199,7 @@ class GreenEnergyClustering:
         generate_summary_report(train_data, labels)
         print("Clustering process completed successfully!")
 
-    def run(self):
+    def run(self) -> None:
         """
         Executes the full pipeline for clustering Green Energy abstracts.
 
