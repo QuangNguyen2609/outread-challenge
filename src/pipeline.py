@@ -56,10 +56,10 @@ class Pipeline:
         self.min_samples = min_samples
         self.linkage = linkage
         self.sg = sg
-        self.pdf_extractor = PDFProcessor(input_path)
+        self.pdf_extractor = PDFProcessor()
         self.text_preprocessor = TextPreprocessor()
         self.evaluator = Evaluator()
-        self.cluster_visualizer = ClusterVisualizer(output_path, visualize_method)
+        self.cluster_visualizer = ClusterVisualizer(output_path, visualize_method, max_clusters)
 
     def extract_abstracts_serial(self, files: List[str],  train_data: List[str], file_paths: List[str]) -> Tuple[List[str], List[str]]:
         """

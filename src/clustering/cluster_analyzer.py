@@ -60,8 +60,7 @@ class DBSCANCluster(AbstractCluster):
         Returns:
         - Tuple containing the trained DBSCAN model and the array of cluster labels.
         """
-
-        dbscan = DBSCAN(eps=self.eps, min_samples=self.min_samples)
+        dbscan = DBSCAN(eps=self.eps, min_samples=self.min_samples, metric='manhattan')
         labels = dbscan.fit_predict(self.vectors)
         return dbscan, labels
 

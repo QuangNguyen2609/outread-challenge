@@ -5,6 +5,7 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import plotly.graph_objs as go
 import plotly.offline as pyo
+import matplotlib.pyplot as plt
 from typing import List
 
 class ClusterVisualizer:
@@ -27,20 +28,19 @@ class ClusterVisualizer:
         
     def generate_colors(self) -> List[str]:
         """
-        Generate a list of colors based on the maximum number of clusters.
+        Generate a list of colors based on the maximum number of clusters using a distinct colormap.
 
         Returns:
         - List of RGBA color strings.
         """
-
-        colors = []
-        for i in range(self.max_clusters):
-            red = int(255 * (i / self.max_clusters))
-            green = int(128 * ((self.max_clusters - i) / self.max_clusters))
-            blue = int(255 * ((i + 1) / self.max_clusters))
-            color = f'rgba({red}, {green}, {blue}, 0.8)'
-            colors.append(color)
-        return colors
+        # Use the 'tab20' colormap
+        colormap = plt.get_cmap('tab20')
+        colors = [colormap(i % 20) for i in range(self.max_clusters)]
+        
+        # Convert RGBA to 'rgba(r, g, b, a)' string format
+        colors_rgba = [f'rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, {a})' for r, g, b, a in colors]
+        
+        return colors_rgba
 
     def visualize_clusters(self, vectors: np.ndarray, labels: np.ndarray, titles: List[str]) -> None:
         """

@@ -57,24 +57,45 @@ The project is structured to maintain clarity and organization:
 ## Usage
 ### Running the Clustering Script
 To run the research paper clustering script, execute the following command from the project root directory:
-```
-python main.py --input_path Green_Energy_Dataset/ --output_path results/ --clustering_method kmeans --embedding_type word2vec --embedding_dim 150 --window_size 10 --parallel --num_worker 20 --visualize_method pca --init_method k-means++ --max_clusters 9 --seed 50 --verbose
-```
-Parameters:
 
-+ **--input_path**: Path to the input dataset containing the research papers in PDF format.
-+ **--output_path**: Directory path where the clustering results and visualizations will be saved.
-+ **--clustering_method**: Clustering algorithm to use for our pipeline.
-+ **--embedding_type**: Type of embedding to use for text vectorization. Options are "word2vec" or "tfidf".
-+ **--embedding_dim**: Dimension of the word embeddings.
-+ **--window_size**: Window size for the Word2Vec model.
-+ -**-parallel**: Enable parallel processing for faster execution.
-+ **--num_worker**: Number of processes to use for parallel processing the pdf files
-+ **--visualize_method**: Dimensionality reduction method to visualize clustering result. Options can include "pca", "tsne".
-+ **--init_method**: Initialization method for KMeans clustering. Options can include "k-means++", "random", etc.
-+ **--max_clusters**: Maximum number of clusters to evaluate for optimal clustering.
-+ **--seed**: Random seed for reproducibility.
-+ **--verbose**: Enable verbose output for more detailed logging.
++ Running Kmeans
+    ```
+    python main.py --input_path Green_Energy_Dataset/ --output_path results/ --clustering_method kmeans --embedding_type word2vec --embedding_dim 150 --window_size 10 --parallel --num_worker 20 --visualize_method pca --init_method k-means++ --max_clusters 9 --seed 50 --verbose
+    ```
+
+    Parameters:
+
+    + **--input_path**: Path to the input dataset containing the research papers in PDF format.
+    + **--output_path**: Directory path where the clustering results and visualizations will be saved.
+    + **--clustering_method**: Clustering algorithm to use for our pipeline.
+    + **--embedding_type**: Type of embedding to use for text vectorization. Options are "word2vec" or "tfidf".
+    + **--embedding_dim**: Dimension of the word embeddings.
+    + **--window_size**: Window size for the Word2Vec model.
+    + -**-parallel**: Enable parallel processing for faster execution.
+    + **--num_worker**: Number of processes to use for parallel processing the pdf files
+    + **--visualize_method**: Dimensionality reduction method to visualize clustering result. Options can include "pca", "tsne".
+    + **--init_method**: Initialization method for KMeans clustering. Options can include "k-means++", "random", etc.
+    + **--max_clusters**: Maximum number of clusters to evaluate for optimal clustering.
+    + **--seed**: Random seed for reproducibility.
+    + **--verbose**: Enable verbose output for more detailed logging.
+
++ Running Hierarchical clustering
+    ```
+    python main.py --input_path Green_Energy_Dataset/ --output_path results/ --clustering_method hierarchical --embedding_type word2vec --embedding_dim 150 --window_size 10 --parallel --num_worker 20 --visualize_method pca --linkage ward --max_clusters 9 --seed 50 --verbose
+    ```
+
+    Parameters:
+
+    + **--linkage**: Linkage criterion for hierarchical clustering pipeline (ward, complete, average, single).
+
++ Running DBSCAN
+    ```
+    python main.py --input_path Green_Energy_Dataset/ --output_path results/ --clustering_method dbscan --embedding_type word2vec --embedding_dim 150 --window_size 10 --parallel --num_worker 20 --visualize_method pca --eps 0.5 --min_samples 5 --seed 50 --verbose
+    ```
+    Parameters:
+    + **--eps**: Epsilon value for DBSCAN pipeline.
+    + **--min_samples**: Minimum number of samples for DBSCAN pipeline.
+
 ## Output
 
 After running the script, the following outputs will be generated in the specified output directory (results/ in this example):
@@ -153,6 +174,17 @@ PCA Visualization: Visualizes clustering results in a 2D space using Principal C
     |---------------------|-------------|------------------|
     | Word2Vec            | 0.56        |     0.54         |
     | TF-IDF              | 0.05        |     3.05         |
+
+### Performance of different clustering method
++  KMeans performs well with the highest Silhouette Score, indicating well-separated and cohesive clusters. The low Davies-Bouldin Index supports this, showing compact and distinct clusters.
++ Hierarchical clustering also performs strongly, with a Silhouette Score close to KMean. It has the lowest Davies-Bouldin Index, indicating the most compact and well-separated clusters
++ DBSCAN shows lower performance with a lower Silhouette Score and higher Davies-Bouldin Index, indicating less distinct and more dispersed clusters.
+
+    | Embedding method | Silhouette Score | Davies-Bouldin Index |
+    |------------------|------------------|----------------------|
+    | KMeans           | 0.59             |     0.46             |
+    | Hierarchical     | 0.58             |     0.41             |
+    | DBSCAN           | 0.43             |     1.08             |
 
 ### Effect of Embedding Dimension and Window Size:
 
