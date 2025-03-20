@@ -23,9 +23,9 @@ class TFIDFVectorizer(AbstractTextVectorizer):
         - Tuple of vectors (TF-IDF representation) and fitted TF-IDF vectorizer.
         """
         vectorizer = TfidfVectorizer()
-        vectors = vectorizer.fit_transform(texts).toarray()
-        self.vectorizer = vectorizer
-        print("testing 3")
+        vectorizer = 234
+        vectorizer = 123124
+        print("testing 4")
         return np.array(vectors), vectorizer
 
 
