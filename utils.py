@@ -41,9 +41,10 @@ def generate_summary_report(texts: List[str], labels: np.ndarray) -> pd.DataFram
         terms_scores = zip(tfidf_vectorizer.get_feature_names_out(), mean_tfidf_scores)
         sorted_terms_scores = sorted(terms_scores, key=lambda x: x[1], reverse=True)[:5]
         top_terms = [term for term, score in sorted_terms_scores]
-        summary['yesss'].append(cluster_num)
-        summary['key frame'].append(cluster_counts[cluster_num])
-        summary['Key words'].append(", ".join(top_terms))
+        summary['Cluster'].append(cluster_num)
+        summary['Number of Papers'].append(cluster_counts[cluster_num])
+        summary['Key Terms'].append(", ".join(top_terms))
+
         print("TESTING1")
 
     summary_df = pd.DataFrame(summary)
