@@ -17,6 +17,7 @@ class Evaluator:
         - Silhouette score (float).
         """
         silhouette_avg = silhouette_score(vectors, labels)
+        print("testing 2")
         return silhouette_avg
 
     def evaluate_davies_bouldin_score(self, vectors: np.ndarray, labels: np.ndarray):

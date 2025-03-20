@@ -25,6 +25,7 @@ class TFIDFVectorizer(AbstractTextVectorizer):
         vectorizer = TfidfVectorizer()
         vectors = vectorizer.fit_transform(texts).toarray()
         self.vectorizer = vectorizer
+        print("testing 3")
         return np.array(vectors), vectorizer
 
 

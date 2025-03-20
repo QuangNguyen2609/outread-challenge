@@ -44,6 +44,7 @@ def generate_summary_report(texts: List[str], labels: np.ndarray) -> pd.DataFram
         summary['Cluster'].append(cluster_num)
         summary['Number of Papers'].append(cluster_counts[cluster_num])
         summary['Key Terms'].append(", ".join(top_terms))
+        print("TESTING1")
 
     summary_df = pd.DataFrame(summary)
     print(summary_df)
